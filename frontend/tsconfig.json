@@ -30,7 +30,7 @@
     "**/*.mts",
     "**/*.ts",
     "**/*.tsx"
-, "src/app/(pages)/Team/page.jsx"  ],
+, "src/app/(pages)/Admin/Events/new/page.jsx"  ],
   "exclude": [
     "node_modules"
   ]
