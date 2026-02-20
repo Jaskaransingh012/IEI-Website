@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { 
   ArrowLeft, 
   Save, 
+  Trash2, 
   Calendar, 
   Clock, 
   MapPin, 
@@ -17,15 +18,21 @@ import {
   X
 } from 'lucide-react';
 
-const NewEventPage = () => {
+const EventEditPage = () => {
   const router = useRouter();
+  const params = useParams();
+  const { id } = params;
+
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   
   const [formData, setFormData] = useState({
     title: '',
     description: '',
+    status: 'upcoming',                // added status field
     event_type: 'workshop',
     start_datetime: '',
     end_datetime: '',
@@ -37,8 +44,53 @@ const NewEventPage = () => {
     registration_deadline: ''
   });
 
-  const eventTypes = ['workshop', 'conference', 'hackathon', 'seminar', 'webinar', 'meetup', 'other'];
+  // Updated to match schema: removed 'conference' and 'other', added 'competition'
+  const eventTypes = ['workshop', 'hackathon', 'seminar', 'competition', 'webinar', 'meetup'];
   const modes = ['online', 'offline', 'hybrid'];
+  const statusOptions = ['upcoming', 'live', 'completed'];   // status options
+
+  useEffect(() => {
+    fetchEvent();
+  }, [id]);
+
+  const fetchEvent = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/events/${id}`);
+      
+      if (!res.ok) {
+        throw new Error('Failed to fetch event');
+      }
+      
+      const data = await res.json();
+      
+      // Format dates for datetime-local input
+      const formatForInput = (dateString) => {
+        const date = new Date(dateString);
+        return date.toISOString().slice(0, 16);
+      };
+
+      setFormData({
+        title: data.title || '',
+        description: data.description || '',
+        status: data.status || 'upcoming',                   // include status
+        event_type: data.event_type || 'workshop',
+        start_datetime: data.start_datetime ? formatForInput(data.start_datetime) : '',
+        end_datetime: data.end_datetime ? formatForInput(data.end_datetime) : '',
+        venue: data.venue || '',
+        mode: data.mode || 'online',
+        registration_link: data.registration_link || '',
+        poster_url: data.poster_url || '',
+        max_participants: data.max_participants || '',
+        registration_deadline: data.registration_deadline ? formatForInput(data.registration_deadline) : ''
+      });
+    } catch (err) {
+      setError('Failed to load event data');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -51,6 +103,7 @@ const NewEventPage = () => {
   const validateForm = () => {
     if (!formData.title.trim()) return 'Title is required';
     if (!formData.description.trim()) return 'Description is required';
+    if (!formData.status) return 'Status is required';                // new validation
     if (!formData.start_datetime) return 'Start date is required';
     if (!formData.end_datetime) return 'End date is required';
     if (new Date(formData.start_datetime) >= new Date(formData.end_datetime)) {
@@ -80,8 +133,8 @@ const NewEventPage = () => {
 
     setSaving(true);
     try {
-      const res = await fetch("/api/events/upload", {
-        method: 'POST',
+      const res = await fetch(`/api/events/${id}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
@@ -90,20 +143,52 @@ const NewEventPage = () => {
       });
 
       if (!res.ok) {
-        throw new Error('Failed to create event');
+        throw new Error('Failed to update event');
       }
 
-      setSuccess('Event created successfully!');
-      setTimeout(() => {
-        router.push('/Admin/Events');
-      }, 1500);
+      setSuccess('Event updated successfully!');
+      setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError('Failed to create event');
+      setError('Failed to save changes');
       console.error(err);
     } finally {
       setSaving(false);
     }
   };
+
+  const handleDelete = async () => {
+    if (!confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/events/${id}`, {
+        method: 'DELETE'
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to delete event');
+      }
+
+      router.push('/Admin/Events');
+    } catch (err) {
+      setError('Failed to delete event');
+      console.error(err);
+      setDeleting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-gray-900 border-t-transparent rounded-full animate-spin" />
+          <p className="text-gray-600 font-medium">Loading event data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -117,21 +202,36 @@ const NewEventPage = () => {
             >
               <ArrowLeft className="w-5 h-5 text-gray-600" />
             </Link>
-            <h1 className="text-xl font-bold text-gray-900">Create New Event</h1>
+            <h1 className="text-xl font-bold text-gray-900">Edit Event</h1>
           </div>
           
-          <button
-            onClick={handleSubmit}
-            disabled={saving}
-            className="flex items-center gap-2 px-6 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-xl font-medium transition-all disabled:opacity-50 shadow-lg shadow-gray-900/20"
-          >
-            {saving ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
-            {saving ? 'Creating...' : 'Create Event'}
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-xl font-medium transition-all disabled:opacity-50"
+            >
+              {deleting ? (
+                <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4" />
+              )}
+              Delete
+            </button>
+            
+            <button
+              onClick={handleSubmit}
+              disabled={saving}
+              className="flex items-center gap-2 px-6 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-xl font-medium transition-all disabled:opacity-50 shadow-lg shadow-gray-900/20"
+            >
+              {saving ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              {saving ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -166,6 +266,7 @@ const NewEventPage = () => {
             </div>
             
             <div className="p-6 space-y-6">
+              {/* Title */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Event Title *
@@ -180,6 +281,7 @@ const NewEventPage = () => {
                 />
               </div>
 
+              {/* Description */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Description *
@@ -194,12 +296,42 @@ const NewEventPage = () => {
                 />
               </div>
 
+              {/* Status Selection - NEW */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Event Status *
+                </label>
+                <div className="grid grid-cols-3 gap-3">
+                  {statusOptions.map((status) => (
+                    <label
+                      key={status}
+                      className={`flex items-center justify-center px-4 py-3 rounded-xl border-2 cursor-pointer transition-all ${
+                        formData.status === status
+                          ? 'border-gray-900 bg-gray-900 text-white'
+                          : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="status"
+                        value={status}
+                        checked={formData.status === status}
+                        onChange={handleChange}
+                        className="hidden"
+                      />
+                      <span className="font-medium capitalize">{status}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Event Type */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Event Type *
                 </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {[ 'workshop', 'hackathon', 'seminar', 'competition', 'webinar', 'meetup' ].map((type) => (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {eventTypes.map((type) => (
                     <label
                       key={type}
                       className={`flex items-center justify-center px-4 py-3 rounded-xl border-2 cursor-pointer transition-all ${
@@ -224,13 +356,13 @@ const NewEventPage = () => {
             </div>
           </div>
 
-          {/* Date & Time */}
+          {/* Date & Time (unchanged) */}
           <div className="bg-white rounded-3xl border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
               <h2 className="font-semibold text-gray-900">Date & Time</h2>
             </div>
-            
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* ... start, end, deadline inputs (same as before) ... */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   <div className="flex items-center gap-2">
@@ -246,7 +378,6 @@ const NewEventPage = () => {
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:bg-white transition-all"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   <div className="flex items-center gap-2">
@@ -262,7 +393,6 @@ const NewEventPage = () => {
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:bg-white transition-all"
                 />
               </div>
-
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   <div className="flex items-center gap-2">
@@ -281,12 +411,11 @@ const NewEventPage = () => {
             </div>
           </div>
 
-          {/* Location & Mode */}
+          {/* Location & Mode (unchanged) */}
           <div className="bg-white rounded-3xl border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
               <h2 className="font-semibold text-gray-900">Location & Mode</h2>
             </div>
-            
             <div className="p-6 space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -315,7 +444,6 @@ const NewEventPage = () => {
                   ))}
                 </div>
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   <div className="flex items-center gap-2">
@@ -335,12 +463,11 @@ const NewEventPage = () => {
             </div>
           </div>
 
-          {/* Registration & Capacity */}
+          {/* Registration & Capacity (unchanged) */}
           <div className="bg-white rounded-3xl border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
               <h2 className="font-semibold text-gray-900">Registration & Capacity</h2>
             </div>
-            
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -359,7 +486,6 @@ const NewEventPage = () => {
                   placeholder="e.g., 100"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   <div className="flex items-center gap-2">
@@ -379,12 +505,11 @@ const NewEventPage = () => {
             </div>
           </div>
 
-          {/* Media */}
+          {/* Media (unchanged) */}
           <div className="bg-white rounded-3xl border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
               <h2 className="font-semibold text-gray-900">Media</h2>
             </div>
-            
             <div className="p-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <div className="flex items-center gap-2">
@@ -400,7 +525,6 @@ const NewEventPage = () => {
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:bg-white transition-all mb-4"
                 placeholder="https://..."
               />
-              
               {formData.poster_url && (
                 <div className="relative aspect-video rounded-xl overflow-hidden bg-gray-100 border border-gray-200">
                   <img
@@ -441,7 +565,7 @@ const NewEventPage = () => {
               ) : (
                 <Save className="w-5 h-5" />
               )}
-              {saving ? 'Creating...' : 'Create Event'}
+              {saving ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </form>
@@ -450,4 +574,4 @@ const NewEventPage = () => {
   );
 };
 
-export default NewEventPage;
+export default EventEditPage;

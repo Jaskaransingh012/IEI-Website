@@ -3,6 +3,12 @@ import mongoose from "mongoose";
 const eventSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
+    status: {
+      type: String,
+      enum: ["upcoming", "live", "completed"],
+      required: true,
+      default: "upcoming",
+    },
     description: String,
     event_type: {
       type: String,

@@ -21,7 +21,7 @@ export default function Layout({ children }) {
       <aside className="w-[280px] shrink-0 border-r border-neutral-200 bg-white">
         <div className="h-full px-6 py-8 flex flex-col">
           <h1 className="text-2xl font-semibold tracking-tight mb-10">
-            Mockr
+            IEI-ADMIN
           </h1>
 
           <nav className="flex flex-col gap-1">
@@ -53,7 +53,7 @@ export default function Layout({ children }) {
           </nav>
 
           <div className="mt-auto pt-6 border-t border-neutral-200 text-xs text-neutral-500">
-            AI Interview Practice
+            IEI WEBSITE
           </div>
         </div>
       </aside>

@@ -23,25 +23,39 @@ export default function AdminLogin() {
   };
 
   return (
-    <div style={{ padding: 40 }}>
-      <h2>Admin Login</h2>
+    <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="bg-white border border-black p-10 rounded-2xl shadow-xl w-full max-w-md">
+        
+        <h2 className="text-3xl font-bold text-black text-center mb-8">
+          Admin Login
+        </h2>
 
-      <input
-        placeholder="Admin ID"
-        onChange={(e) => setAdminId(e.target.value)}
-      />
+        <div className="space-y-6">
+          <input
+            type="text"
+            placeholder="Admin ID"
+            value={adminId}
+            onChange={(e) => setAdminId(e.target.value)}
+            className="w-full px-4 py-3 border border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-black placeholder-gray-500"
+          />
 
-      <br /><br />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full px-4 py-3 border border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-black placeholder-gray-500"
+          />
 
-      <input
-        type="password"
-        placeholder="Password"
-        onChange={(e) => setPassword(e.target.value)}
-      />
+          <button
+            onClick={handleLogin}
+            className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-900 transition duration-300"
+          >
+            Login
+          </button>
+        </div>
 
-      <br /><br />
-
-      <button onClick={handleLogin}>Login</button>
+      </div>
     </div>
   );
 }
