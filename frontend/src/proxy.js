@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-export function middleware(req) {
+export function proxy(req) {
   const cookie = req.cookies.get(process.env.NEXT_PUBLIC_ADMIN_COOKIE_NAME)?.value;
 
   const isAdminRoute = req.nextUrl.pathname.startsWith("/Admin");
