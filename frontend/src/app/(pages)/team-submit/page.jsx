@@ -26,7 +26,7 @@ export default function TeamSubmit() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (form.password !== process.env.TEAM_SUBMIT_PASSWORD) {
+    if (form.password !== "jaskaran@123") {
       setMessage("Wrong password");
       return;
     }
