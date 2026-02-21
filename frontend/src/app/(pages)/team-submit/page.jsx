@@ -18,7 +18,6 @@ export default function TeamSubmit() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  const SECRET_PASSWORD = "team@123";
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -27,7 +26,7 @@ export default function TeamSubmit() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (form.password !== SECRET_PASSWORD) {
+    if (form.password !== process.env.TEAM_SUBMIT_PASSWORD) {
       setMessage("Wrong password");
       return;
     }
