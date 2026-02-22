@@ -126,6 +126,8 @@ export default function TeamSubmit() {
             <option value="Discipline">Discipline</option>
             <option value="Content">Content</option>
             <option value="Media">Media</option>
+            <option value="Graphics">Graphics</option>
+            <option value="Promotions">Promotions</option>
           </Select>
 
           <textarea
