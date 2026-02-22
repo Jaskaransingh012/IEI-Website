@@ -12,7 +12,7 @@ const TeamSchema = new mongoose.Schema({
   },
   team: {
     type: String,
-    enum: ["Organization", "Web", "Marketing", "Discipline", "Content", "Media", "Grphics","promotions"],
+    enum: ["Organization", "Web", "Marketing", "Discipline", "Content", "Media", "Graphics","Promotions"],
     required: true
   },
   bio: String,
