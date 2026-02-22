@@ -7,7 +7,7 @@ const TeamSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ["Core", "Head", "Executive"],
+    enum: ["Core", "Head", "Co-Head" ,"Executive"],
     required: true
   },
   team: {

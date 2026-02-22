@@ -116,6 +116,8 @@ export default function TeamSubmit() {
             <option value="Core">Core</option>
             <option value="Head">Head</option>
             <option value="Executive">Executive</option>
+            <option value="Co-Head">Co-Head</option>
+
           </Select>
 
           <Select name="team" value={form.team} onChange={handleChange} required>
